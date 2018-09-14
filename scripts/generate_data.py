@@ -206,6 +206,7 @@ def make_nsqd(dbfile):
                 .assign(landuse_primary=lambda df: df['landuse_orig'].map(_LU_MAP))
                 .assign(sample_equipment=lambda df: df['type_sampler'].map(_EQUIP_MAP))
                 .assign(sampletype='composite')
+                .assign(days_since_last_rain=lambda df: df['days_since_last_rain'].astype(float, errors='ignore'))
                 .drop(columns=['station_code'])
         )
 
@@ -224,12 +225,14 @@ def make_bmpdb(dbfile):
 
 
 if __name__ == '__main__':
-    keep_csv = (len(sys.argv) > 1) and sys.argv[1] in ('-k', '--keep')
-    bmpfile = Path(r"P:\Reference\Data\BMP_Database\201808\Master BMP Database v 08-22-2018 - Web.accdb")
-    nsqdfile = Path(r"P:\Reference\Data\Bob Pitt NSWQ DB\nsqd.accdb")
+    keep_csv = '--keep' in sys.argv
 
-    bmpdb = make_bmpdb(bmpfile)
-    nsqd = make_nsqd(nsqdfile)
+    if '--bmpdata' in sys.argv:
+        bmpfile = Path(r"P:\Reference\Data\BMP_Database\201808\Master BMP Database v 08-22-2018 - Web.accdb")
+        bmpdb = make_bmpdb(bmpfile)
+        dump_to_zip(bmpdb, 'bmpdata', keep_csv=keep_csv)
 
-    dump_to_zip(bmpdb, 'bmpdata', keep_csv=keep_csv)
-    dump_to_zip(nsqd, 'nsqd', keep_csv=keep_csv)
+    if '--nsqd' in sys.argv:
+        nsqdfile = Path(r"P:\Reference\Data\Bob Pitt NSWQ DB\nsqd.accdb")
+        nsqd = make_nsqd(nsqdfile)
+        dump_to_zip(nsqd, 'nsqd', keep_csv=keep_csv)
