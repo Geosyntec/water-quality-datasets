@@ -1,3 +1,6 @@
 .DS_STORE
 *.accdb
-
+*.csv
+scratch
+*.ipynb
+__pycache__
