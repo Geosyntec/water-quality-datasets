@@ -173,7 +173,6 @@ def accdb_connection(dbfile):
 def dump_to_zip(df, name, keep_csv=False):
     outcsv = OUTDIR / f'{name}.csv'
     outzip = OUTDIR / f'{name}.zip'
-
     df.to_csv(outcsv, index=False, encoding='utf-8')
 
     with ZipFile(outzip, mode='w', compression=ZIP_DEFLATED) as z:
@@ -209,7 +208,6 @@ def make_nsqd(dbfile):
                 .assign(days_since_last_rain=lambda df: df['days_since_last_rain'].astype(float, errors='ignore'))
                 .drop(columns=['station_code'])
         )
-
 
     return res
 
