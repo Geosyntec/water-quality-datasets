@@ -64,7 +64,7 @@ BMPQUERY = dedent("""\
     SELECT
         [tblBMPCODES].[CAT_2016] as [bmpcat],
         [BMP INFO S02].[TBMPT 2009] as [bmptype],
-        [BMP INFO S02].[Analysis_Category] AS [category],
+        [tblBMPCODES].[Analysis_Category] AS [category],
         [WATER QUALITY].[SITEID] as [site_id],
         [TESTSITE A01].[SITENAME] as [site],
         [BMP INFO S02].[PDF ID] as [pdf_id],
