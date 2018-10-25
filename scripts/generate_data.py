@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import pyodbc
 import pandas
 import numpy
+import click
 
 import wqio
 
@@ -78,7 +79,6 @@ BMPQUERY = dedent("""\
         [tblAnalysisGroups].[Group] as [paramgroup],
         [tblAnalysisGroups].[Common Name] as [parameter],
         [WATER QUALITY].[WQX Parameter] as [raw_parameter],
-        [WATER QUALITY].[Sample Fraction] as [fraction],
         [WATER QUALITY].[MEDIA] as [media],
         [WATER QUALITY].[WQ Analysis Value] as [wq_value],
         [WATER QUALITY].[WQ UNITS] as [wq_units],
@@ -190,8 +190,6 @@ def make_nsqd(dbfile):
             pandas.read_sql(NSQDQUERY, cnn)
                 .rename(columns=lambda c: c.lower().replace(' ', '_'))
                 .rename(columns={
-                    'parameter': 'parameter_family',
-                    'fraction': 'parameter_fraction',
                     'station_name': 'site',
                     'epa_rain_zone': 'rain_zone',
                     'principal_landuses': 'landuse_orig',
@@ -199,7 +197,7 @@ def make_nsqd(dbfile):
                     'emc_calculation': 'sampletype',
                     'res': 'value',
                 })
-                .pipe(setup_parameters)
+                .pipe(setup_fraction)
                 .pipe(convert_dates)
                 .assign(season=lambda df: df['start_date'].map(wqio.utils.getSeason))
                 .assign(landuse_primary=lambda df: df['landuse_orig'].map(_LU_MAP))
@@ -208,7 +206,7 @@ def make_nsqd(dbfile):
                 .assign(days_since_last_rain=lambda df: df['days_since_last_rain'].astype(float, errors='ignore'))
                 .drop(columns=['station_code'])
         )
-
+        assert 'fraction' in res.columns
     return res
 
 
@@ -222,15 +220,21 @@ def make_bmpdb(dbfile):
     return res
 
 
-if __name__ == '__main__':
-    keep_csv = '--keep' in sys.argv
-
-    if '--bmpdata' in sys.argv:
+@click.command()
+@click.option("--bmp", default=Path(".datacache"))
+@click.option("--nsqd", is_flag=True)
+@click.option("--keep", is_flag=True)
+def cli(bmp, nsqd, keep)
+    if bmp:
         bmpfile = Path(r"P:\Reference\Data\BMP_Database\201808\Master BMP Database v 08-22-2018 - Web.accdb")
         bmpdb = make_bmpdb(bmpfile)
-        dump_to_zip(bmpdb, 'bmpdata', keep_csv=keep_csv)
+        dump_to_zip(bmpdb, 'bmpdata', keep_csv=keep)
 
-    if '--nsqd' in sys.argv:
+    if nsqd:
         nsqdfile = Path(r"P:\Reference\Data\Bob Pitt NSWQ DB\nsqd.accdb")
         nsqd = make_nsqd(nsqdfile)
-        dump_to_zip(nsqd, 'nsqd', keep_csv=keep_csv)
+        dump_to_zip(nsqd, 'nsqd', keep_csv=keep)
+
+
+if __name__ == '__main__':
+    cli()
