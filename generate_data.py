@@ -196,7 +196,6 @@ def make_nsqd(dbfile):
                     'emc_calculation': 'sampletype',
                     'res': 'value',
                 })
-                .pipe(setup_fraction)
                 .pipe(convert_dates)
                 .assign(season=lambda df: df['start_date'].map(wqio.utils.getSeason))
                 .assign(landuse_primary=lambda df: df['landuse_orig'].map(_LU_MAP))
@@ -205,7 +204,6 @@ def make_nsqd(dbfile):
                 .assign(days_since_last_rain=lambda df: df['days_since_last_rain'].astype(float, errors='ignore'))
                 .drop(columns=['station_code'])
         )
-        assert 'fraction' in res.columns
     return res
 
 
@@ -220,20 +218,22 @@ def make_bmpdb(dbfile):
 
 
 @click.command()
-@click.argument("outdir")
+@click.argument("outdir", type=click.Path(exists=True, file_okay=False))
 @click.option("--bmp", is_flag=True, default=False, help='When present, downloads BMP data')
 @click.option("--nsqd", is_flag=True, default=False, help='When present, downloads NSQD data')
-@click.option("--keep-csv/--remove-csv", default=True, help='When present, keeps the CSV files')
+@click.option("--keep-csv/--remove-csv", is_flag=True, default=True, help='When present, keeps the CSV files')
 def cli(outdir, bmp, nsqd, keep_csv):
     """
-    Downloads BMP Database and/or NSQD data and sauves to OUTDIR
+    Downloads BMP Database and/or NSQD data and saves to OUTDIR
     """
     if bmp:
+        click.echo('updating BMP data')
         bmpfile = Path(r"P:\Reference\Data\BMP_Database\201808\Master BMP Database v 08-22-2018 - Web.accdb")
         bmpdb = make_bmpdb(bmpfile)
         dump_to_zip(bmpdb, 'bmpdata', Path(outdir), keep_csv=keep_csv)
 
     if nsqd:
+        click.echo('updating NSQD')
         nsqdfile = Path(r"P:\Reference\Data\Bob Pitt NSWQ DB\nsqd.accdb")
         nsqd = make_nsqd(nsqdfile)
         dump_to_zip(nsqd, 'nsqd', Path(outdir), keep_csv=keep_csv)
