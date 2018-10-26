@@ -11,7 +11,6 @@ import click
 
 import wqio
 
-OUTDIR = Path('../data')
 
 NSQDQUERY = dedent("""\
     SELECT
@@ -170,9 +169,9 @@ def accdb_connection(dbfile):
     cnn.close()
 
 
-def dump_to_zip(df, name, keep_csv=False):
-    outcsv = OUTDIR / f'{name}.csv'
-    outzip = OUTDIR / f'{name}.zip'
+def dump_to_zip(df, name, outdir, keep_csv=False):
+    outcsv = outdir / f'{name}.csv'
+    outzip = outdir / f'{name}.zip'
     df.to_csv(outcsv, index=False, encoding='utf-8')
 
     with ZipFile(outzip, mode='w', compression=ZIP_DEFLATED) as z:
@@ -221,19 +220,23 @@ def make_bmpdb(dbfile):
 
 
 @click.command()
-@click.option("--bmp", default=Path(".datacache"))
-@click.option("--nsqd", is_flag=True)
-@click.option("--keep", is_flag=True)
-def cli(bmp, nsqd, keep)
+@click.argument("outdir")
+@click.option("--bmp", is_flag=True, default=False, help='When present, downloads BMP data')
+@click.option("--nsqd", is_flag=True, default=False, help='When present, downloads NSQD data')
+@click.option("--keep-csv/--remove-csv", default=True, help='When present, keeps the CSV files')
+def cli(outdir, bmp, nsqd, keep_csv):
+    """
+    Downloads BMP Database and/or NSQD data and sauves to OUTDIR
+    """
     if bmp:
         bmpfile = Path(r"P:\Reference\Data\BMP_Database\201808\Master BMP Database v 08-22-2018 - Web.accdb")
         bmpdb = make_bmpdb(bmpfile)
-        dump_to_zip(bmpdb, 'bmpdata', keep_csv=keep)
+        dump_to_zip(bmpdb, 'bmpdata', Path(outdir), keep_csv=keep_csv)
 
     if nsqd:
         nsqdfile = Path(r"P:\Reference\Data\Bob Pitt NSWQ DB\nsqd.accdb")
         nsqd = make_nsqd(nsqdfile)
-        dump_to_zip(nsqd, 'nsqd', keep_csv=keep)
+        dump_to_zip(nsqd, 'nsqd', Path(outdir), keep_csv=keep_csv)
 
 
 if __name__ == '__main__':
